@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/Massil-br/GlobalWebsite/backend/models"
 	"github.com/labstack/echo/v4"
 )
@@ -8,9 +10,10 @@ import (
 func LoggedTest(c echo.Context) error {
 	user := c.Get("user").(*models.User)
 
-	return c.JSON(200, echo.Map{
+	return c.JSON(http.StatusOK, echo.Map{
 		"message": "You are logged in!",
 		"user":    user.Username,
 		"role":    user.Role,
+		"test":    user.ClickerGameSave,
 	})
 }

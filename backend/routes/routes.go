@@ -14,21 +14,30 @@ func InitRoutes(e *echo.Echo) {
 }
 
 func InitGetRoutes(e *echo.Echo) {
-	e.GET("/", controllers.MainPage)
-	e.GET("/users", controllers.GetAllUsers)
-	e.GET("users/:id", controllers.GetUserById)
+	e.GET("/api", controllers.MainPage)
+	e.GET("/api/users", controllers.GetAllUsers)
+	e.GET("/api/users/:id", controllers.GetUserById)
 
-	e.GET("/logged", controllers.LoggedTest,
+	e.GET("/api/logged", controllers.LoggedTest,
 		middleware.JWTMiddleware,
 		middleware.RoleMiddleware("user"),
 	)
+
+	e.GET("/api/clicker", controllers.GetClickerStats,
+		middleware.JWTMiddleware,
+		middleware.RoleMiddleware("user"),
+		middleware.EnsureClickerGameSave,
+	)
+
 }
 
 func InitPostRoutes(e *echo.Echo) {
-	e.POST("/register", controllers.CreateUser)
-	e.POST("/login", controllers.Login)
+	e.POST("/api/register", controllers.CreateUser)
+	e.POST("/api/login", controllers.Login)
 }
 
 func InitDeleteRoutes(e *echo.Echo) {
-	e.DELETE("/users/:id", controllers.DeleteUserById)
+	e.DELETE("/api/users/:id", controllers.DeleteUserById)
+	e.DELETE("/api/reset/:game/:id", controllers.ResetGameById, middleware.JWTMiddleware, middleware.RoleMiddleware("user"))
+
 }
