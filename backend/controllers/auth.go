@@ -15,10 +15,11 @@ import (
 )
 
 type CreateUserRequest struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string
+	Username        string `json:"username"`
+	Email           string `json:"email"`
+	Password        string `json:"password"`
+	ConfirmPassword string `json:"confirmPassword"`
+	Role            string
 }
 
 func CreateUser(c echo.Context) error {
@@ -27,6 +28,12 @@ func CreateUser(c echo.Context) error {
 	err := c.Bind(&req)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid input"})
+	}
+
+	if req.ConfirmPassword != req.Password {
+		return c.JSON(http.StatusBadRequest, echo.Map{
+			"error": "Password and confirmPassword are not the same",
+		})
 	}
 
 	if len(req.Password) < 8 || !regexp.MustCompile("[0-9]").MatchString(req.Password) {
@@ -112,6 +119,11 @@ func Login(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{
 		"message": "Login successful",
 		"token":   tokenString,
+		"user": echo.Map{
+			"username": user.Username,
+			"email":    user.Email,
+			"role":     user.Role,
+		},
 	})
 
 }

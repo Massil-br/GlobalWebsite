@@ -11,7 +11,7 @@ func GetClickerStats(c echo.Context) error {
 	user := c.Get("user").(*models.User)
 
 	return c.JSON(http.StatusOK, echo.Map{
-		"username": user.Username,
+		"user":     user,
 		"gameSave": user.ClickerGameSave,
 	})
 }

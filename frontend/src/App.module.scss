@@ -1,0 +1,59 @@
+$background-color: #121212;
+$nav-color: #1f1f1f;
+$link-color: #eee;
+$link-hover: #6c63ff;
+$button-bg: #6c63ff;
+$button-hover: #5750d1;
+$button-text: #fff;
+
+.appContainer {
+  background-color: $background-color;
+  min-height: 100vh;
+  color: $link-color;
+}
+
+.navbar {
+  background-color: $nav-color;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.navLeft,
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.navLink {
+  color: $link-color;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s;
+
+  &:hover {
+    color: $link-hover;
+  }
+}
+
+.userInfo {
+  font-weight: 500;
+}
+
+.logoutButton {
+  background-color: $button-bg;
+  color: $button-text;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: $button-hover;
+  }
+}
