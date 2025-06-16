@@ -106,9 +106,13 @@ func Login(c echo.Context) error {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"role":    user.Role,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+		"user_id":    user.ID,
+		"created_at": user.CreatedAt,
+		"updated_at": user.UpdatedAt,
+		"username":   user.Username,
+		"email":      user.Email,
+		"role":       user.Role,
+		"exp":        time.Now().Add(24 * time.Hour).Unix(),
 	})
 	secret := os.Getenv("JWT_SECRET")
 	tokenString, err := token.SignedString([]byte(secret))
@@ -119,11 +123,6 @@ func Login(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{
 		"message": "Login successful",
 		"token":   tokenString,
-		"user": echo.Map{
-			"username": user.Username,
-			"email":    user.Email,
-			"role":     user.Role,
-		},
 	})
 
 }

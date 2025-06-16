@@ -23,9 +23,9 @@ func InitGetRoutes(e *echo.Echo) {
 		middleware.AuthMiddleware("user"),
 	)
 
-	e.GET("/api/clicker", controllers.GetClickerStats,
+	e.GET("/api/clicker", controllers.GetClickerPlayerInfo,
 		middleware.AuthMiddleware("user"),
-		middleware.EnsureClickerGameSave,
+		middleware.EnsureClickerGameSaveExists,
 	)
 
 }
