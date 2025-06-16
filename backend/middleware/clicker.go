@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/Massil-br/GlobalWebsite/backend/config"
@@ -35,14 +36,9 @@ func EnsureClickerGameSave(next echo.HandlerFunc) echo.HandlerFunc {
 				return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Erreur base de données"})
 			}
 		}
-
-		var fullUser models.User
-		if err := config.DB.Preload("ClickerGameSave").First(&fullUser, user.ID).Error; err != nil {
-			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Impossible de charger GameSave"})
-		}
-
-		// Optionnel : tu peux stocker la save dans le contexte pour y accéder facilement dans les handlers
-		c.Set("user", &fullUser)
+		fmt.Println(save)
+		// Injecte la sauvegarde dans le contexte
+		c.Set("clickerGameSave", &save)
 
 		return next(c)
 	}

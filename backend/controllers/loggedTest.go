@@ -14,6 +14,5 @@ func LoggedTest(c echo.Context) error {
 		"message": "You are logged in!",
 		"user":    user.Username,
 		"role":    user.Role,
-		"test":    user.ClickerGameSave,
 	})
 }
