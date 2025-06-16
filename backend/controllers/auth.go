@@ -78,7 +78,6 @@ func CreateUser(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, echo.Map{
 		"message": "User created successfully",
-		"user":    echo.Map{"id": user.ID, "username": user.Username, "email": user.Email, "role": user.Role},
 	})
 }
 

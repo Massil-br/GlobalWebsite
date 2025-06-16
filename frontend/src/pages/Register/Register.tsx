@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import styles from './Register.module.scss';
+import { OkResponse, RegisterRequest } from "../types/api";
 
 interface RegisterProps {
   apiUrl: string;
@@ -13,11 +16,27 @@ const Register: React.FC<RegisterProps> = ({ apiUrl }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (success && message) {
+      // Après 3 secondes, redirige vers /login
+      const timer = setTimeout(() => {
+        navigate("/login");
+      }, 3000);
+
+      // Nettoyage du timer si le composant est démonté avant
+      return () => clearTimeout(timer);
+    }
+  }, [success, message, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+    setMessage(null);
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -27,25 +46,24 @@ const Register: React.FC<RegisterProps> = ({ apiUrl }) => {
     setLoading(true);
 
     try {
-      const res = await fetch(apiUrl, {
-        method: "POST",
+      const registerData: RegisterRequest = { username, email, password, confirmPassword };
+
+      const response = await axios.post<OkResponse>(apiUrl, registerData, {
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password, confirmPassword }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Something went wrong");
+      setSuccess(true);
+      setMessage(response.data.message);
+      setUsername("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data.error || "Something went wrong");
       } else {
-        setSuccess(true);
-        setUsername("");
-        setEmail("");
-        setPassword("");
-        setConfirmPassword("");
+        setError("Network error");
       }
-    } catch (err) {
-      setError("Network error");
     } finally {
       setLoading(false);
     }
@@ -57,7 +75,7 @@ const Register: React.FC<RegisterProps> = ({ apiUrl }) => {
         <h2>Register</h2>
 
         {error && <div className={styles.error}>{error}</div>}
-        {success && <div className={styles.success}>Account created successfully!</div>}
+        {success && message && <div className={styles.success}>{message}</div>}
 
         <label>Username</label>
         <input
