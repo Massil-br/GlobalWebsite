@@ -64,7 +64,6 @@ func AuthMiddleware(minRole string) echo.MiddlewareFunc {
 			if userLevel < minLevel {
 				return echo.ErrForbidden
 			}
-			fmt.Println(user)
 
 			c.Set("user", &user)
 

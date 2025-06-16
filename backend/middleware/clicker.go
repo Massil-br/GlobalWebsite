@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/Massil-br/GlobalWebsite/backend/config"
@@ -36,7 +35,6 @@ func EnsureClickerGameSave(next echo.HandlerFunc) echo.HandlerFunc {
 				return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Erreur base de données"})
 			}
 		}
-		fmt.Println(save)
 		// Injecte la sauvegarde dans le contexte
 		c.Set("clickerGameSave", &save)
 
