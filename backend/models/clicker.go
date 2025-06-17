@@ -13,8 +13,8 @@ type ClickerGameSave struct {
 	Golds             float64 `gorm:"default:0" json:"golds"`
 	Level             int     `gorm:"default:1" json:"level"`
 	Step              int     `gorm:"default:1" json:"step"`
-	ClicLevel         int     `gorm:"default:1" json:"clicLevel"`
-	ClicDamage        float64 `gorm:"default:1" json:"clicDamage"`
+	ClickLevel        int     `gorm:"default:1" json:"clickLevel"`
+	ClickDamage       float64 `gorm:"default:1" json:"clickDamage"`
 	AutoHuntGrokLevel int     `gorm:"default:0" json:"autoHuntGrokLevel"`
 	AutoHuntGrokDPS   float64 `gorm:"default:0" json:"autoHuntGrokDps"`
 }

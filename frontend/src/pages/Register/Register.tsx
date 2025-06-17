@@ -2,13 +2,12 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import styles from './Register.module.scss';
-import { OkResponse, RegisterRequest } from "../types/api";
+import { OkResponse, RegisterRequest } from "../utils/api";
+import { GlobalVars } from "../../App";
 
-interface RegisterProps {
-  apiUrl: string;
-}
 
-const Register: React.FC<RegisterProps> = ({ apiUrl }) => {
+
+const Register: React.FC = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,8 +46,8 @@ const Register: React.FC<RegisterProps> = ({ apiUrl }) => {
 
     try {
       const registerData: RegisterRequest = { username, email, password, confirmPassword };
-
-      const response = await axios.post<OkResponse>(apiUrl, registerData, {
+      const url = GlobalVars.apiUrl + '/register'
+      const response = await axios.post<OkResponse>(url, registerData, {
         headers: { "Content-Type": "application/json" },
       });
 

@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func GetClickerPlayerInfo(c echo.Context) error {
+func GetClickerPlayerSave(c echo.Context) error {
 	// Récupère l'utilisateur depuis le contexte (déjà authentifié par JWTMiddleware)
 	user := c.Get("user").(*models.User)
 	var save models.ClickerGameSave
@@ -18,9 +18,7 @@ func GetClickerPlayerInfo(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Erreur lors de la récupération de la sauvegarde du clicker"})
 	}
 
-	return c.JSON(http.StatusOK, echo.Map{
-		"save": save,
-	})
+	return c.JSON(http.StatusOK, save)
 }
 
 func GetClickerPlayerStats(c echo.Context) error {
@@ -34,7 +32,5 @@ func GetClickerPlayerStats(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, echo.Map{
-		"stats": stats,
-	})
+	return c.JSON(http.StatusOK, stats)
 }

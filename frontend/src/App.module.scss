@@ -1,19 +1,18 @@
-$background-color: #121212;
-$nav-color: #1f1f1f;
-$link-color: #eee;
-$link-hover: #6c63ff;
-$button-bg: #6c63ff;
-$button-hover: #5750d1;
-$button-text: #fff;
+@use "./Global/variables.scss" as vars;
+
+
+:root{
+  font-family: vars.$base-font;
+}
 
 .appContainer {
-  background-color: $background-color;
+  background-color: vars.$background-color;
   min-height: 100vh;
-  color: $link-color;
+  color: vars.$link-color;
 }
 
 .navbar {
-  background-color: $nav-color;
+  background-color: vars.$nav-color;
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
@@ -29,13 +28,13 @@ $button-text: #fff;
 }
 
 .navLink {
-  color: $link-color;
+  color: vars.$link-color;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s;
 
   &:hover {
-    color: $link-hover;
+    color: vars.$link-hover;
   }
 }
 
@@ -44,8 +43,8 @@ $button-text: #fff;
 }
 
 .logoutButton {
-  background-color: $button-bg;
-  color: $button-text;
+  background-color:vars.$button-bg;
+  color: vars.$button-text;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;
@@ -54,6 +53,6 @@ $button-text: #fff;
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: $button-hover;
+    background-color: vars.$button-hover;
   }
 }

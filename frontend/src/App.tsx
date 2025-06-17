@@ -4,11 +4,16 @@ import Home from './pages/Home/Home';
 import Register from './pages/Register/Register';
 import styles from './App.module.scss';
 import Login from './pages/Login/Login';
+import Clicker from './pages/Clicker/Clicker'
+
+export const GlobalVars = {
+  apiUrl : 'http://localhost:8081/api'
+}
 
 function App() {
   const [user, setUser] = React.useState<string | null>(null);
   const navigate = useNavigate();
-  const apiUrl = "http://localhost:8081/api";
+  
 
   React.useEffect(() => {
     const token = localStorage.getItem('jwt_token');
@@ -47,8 +52,9 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/register" element={<Register apiUrl={`${apiUrl}/register`} />} />
-        <Route path="/login" element={<Login apiUrl={`${apiUrl}/login`} onLogin={(username) => setUser(username)}/>}/>
+        <Route path="/register" element={<Register  />} />
+        <Route path="/login" element={<Login  onLogin={(username) => setUser(username)}/>}/>
+        <Route path="/clicker" element={<Clicker/>}></Route>
       </Routes>
     </div>
   );

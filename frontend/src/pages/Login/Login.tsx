@@ -1,16 +1,16 @@
 import React, { useState , useEffect} from "react";
 import axios from "axios";
-import { LoginRequest, LoginResponse, DecodedJwt, User } from "../types/api";
+import { LoginRequest, LoginResponse, DecodedJwt, User } from "../utils/api";
 import styles from './Login.module.scss';
 import  { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import { GlobalVars } from "../../App";
 
 interface LoginProps {
-  apiUrl: string;
   onLogin: (username: string) => void;
 }
 
-const Login: React.FC<LoginProps> = ({ apiUrl, onLogin }) => {
+const Login: React.FC<LoginProps> = ({  onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +41,8 @@ const Login: React.FC<LoginProps> = ({ apiUrl, onLogin }) => {
 
     try {
       const loginRequest: LoginRequest = { email, password };
-      const response = await axios.post<LoginResponse>(apiUrl, loginRequest, {
+      const url = GlobalVars.apiUrl + '/login';
+      const response = await axios.post<LoginResponse>(url, loginRequest, {
         headers: { "Content-Type": "application/json" },
       });
 

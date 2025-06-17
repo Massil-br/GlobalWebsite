@@ -42,3 +42,30 @@ export interface User{
 export interface OkResponse{
     message: string;
 }
+
+
+export interface ClickerGameSave{
+    Id: number;
+    created_at : string;
+    updated_at: string;
+    user_id: number;
+    golds: number;
+    level: number;
+    step: number;
+    clickLevel: number;
+    clickDamage: number;
+    AutoHuntGrokLevel: number;
+    AutoHuntGrokDps: number;
+
+}
+
+export interface ClickerGameStats {
+    Id: number;
+    created_at : string;
+    updated_at: string;
+    user_id : number;
+    totalGoldsEarner: number;
+    totalClicks: number;
+    totalPlayedTime: string;
+}
+

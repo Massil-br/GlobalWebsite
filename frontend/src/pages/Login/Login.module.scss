@@ -1,18 +1,11 @@
-$primary-color: #6c63ff;
-$background-color: #121212;
-$input-bg: #1e1e1e;
-$input-border: #333;
-$text-color: #eee;
-$error-color: #ff6b6b;
-$button-hover: #5750d1;
-$sucess: #2b792b;
+@use '../../Global/variables.scss' as vars;
 
 .loginWrapper {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: $background-color;
+  background-color: vars.$background-color;
   padding: 1rem;
 }
 
@@ -23,7 +16,7 @@ $sucess: #2b792b;
   width: 100%;
   max-width: 400px;
   box-shadow: 0 0 20px rgba(108, 99, 255, 0.3);
-  color: $text-color;
+  color: vars.$text-color;
   display: flex;
   flex-direction: column;
 
@@ -40,17 +33,17 @@ $sucess: #2b792b;
   input {
     margin-top: 0.4rem;
     padding: 0.7rem 1rem;
-    background-color: $input-bg;
-    border: 1px solid $input-border;
+    background-color: vars.$input-bg;
+    border: 1px solid vars.$input-border;
     border-radius: 6px;
-    color: $text-color;
+    color: vars.$text-color;
     font-size: 1rem;
     transition: border-color 0.3s;
 
     &:focus {
       outline: none;
-      border-color: $primary-color;
-      box-shadow: 0 0 5px $primary-color;
+      border-color: vars.$primary-color;
+      box-shadow: 0 0 5px vars.$primary-color;
     }
 
     &::placeholder {
@@ -60,7 +53,7 @@ $sucess: #2b792b;
 
   button {
     margin-top: 2rem;
-    background-color: $primary-color;
+    background-color: vars.$primary-color;
     color: white;
     padding: 0.8rem 1rem;
     border: none;
@@ -71,13 +64,13 @@ $sucess: #2b792b;
     transition: background-color 0.3s;
 
     &:hover {
-      background-color: $button-hover;
+      background-color: vars.$button-hover;
     }
   }
 
   .error {
     margin-top: 0.5rem;
-    color: $error-color;
+    color: vars.$error-color;
     font-weight: 700;
     text-align: center;
   }
