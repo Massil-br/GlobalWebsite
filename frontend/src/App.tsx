@@ -5,10 +5,11 @@ import Register from './pages/Register/Register';
 import styles from './App.module.scss';
 import Login from './pages/Login/Login';
 import Clicker from './pages/Clicker/Clicker'
+import type { User } from './pages/utils/types';
+import  getUserFromJwt  from './pages/utils/utilsfunc';
 
-export const GlobalVars = {
-  apiUrl : 'http://localhost:8081/api'
-}
+
+
 
 function App() {
   const [user, setUser] = React.useState<string | null>(null);
@@ -16,10 +17,12 @@ function App() {
   
 
   React.useEffect(() => {
-    const token = localStorage.getItem('jwt_token');
-    if (token) {
-      setUser("MonUser"); // Tu pourras ici décoder ou requêter un vrai username
+    const user : User | null = getUserFromJwt();
+    if(user){
+      localStorage.setItem("user", JSON.stringify(user));
     }
+      
+    
   }, []);
 
   const handleLogout = () => {

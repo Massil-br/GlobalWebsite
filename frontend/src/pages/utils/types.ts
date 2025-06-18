@@ -54,8 +54,8 @@ export interface ClickerGameSave{
     step: number;
     clickLevel: number;
     clickDamage: number;
-    AutoHuntGrokLevel: number;
-    AutoHuntGrokDps: number;
+    autoHuntGrokLevel: number;
+    autoHuntGrokDps: number;
 
 }
 
@@ -64,8 +64,21 @@ export interface ClickerGameStats {
     created_at : string;
     updated_at: string;
     user_id : number;
-    totalGoldsEarner: number;
+    totalGoldsEarned: number;
     totalClicks: number;
     totalPlayedTime: string;
 }
 
+
+export interface EnemyImg {
+  name: string;
+  sprites: string[];
+}
+
+export const GlobalVars = {
+  apiUrl : 'http://192.168.1.44:8081/api'
+}
+
+export interface PlayerImg{
+    sprites: string[];
+}

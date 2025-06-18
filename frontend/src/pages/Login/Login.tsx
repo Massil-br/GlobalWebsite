@@ -1,10 +1,10 @@
 import React, { useState , useEffect} from "react";
 import axios from "axios";
-import { LoginRequest, LoginResponse, DecodedJwt, User } from "../utils/api";
+import type { LoginRequest, LoginResponse, DecodedJwt, User } from "../utils/types";
 import styles from './Login.module.scss';
 import  { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
-import { GlobalVars } from "../../App";
+import { GlobalVars } from "../utils/types";
 
 interface LoginProps {
   onLogin: (username: string) => void;

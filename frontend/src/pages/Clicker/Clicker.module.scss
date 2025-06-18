@@ -1,36 +1,97 @@
 @use '../../Global/variables.scss' as vars;
 
+$scale: 0.25;
+$scaledMaxSize : 100% *0.2; 
 
 .gameLayout {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1.5rem;
-    padding: 2rem;
-    size: 100%;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
+    
+}
+.clickerPage{
+  height : 95vh;
+  overflow: hidden;
 }
 
 .playerInfo,
 .gameArea,
 .shop {
   background-color: vars.$box-bg;
+  height: 95vh;
   padding: 1rem;
+  box-sizing: border-box;
   border-radius: 8px;
   color: vars.$text-color;
+  ul{
+    padding-left: 0.40rem;
+  }
+}
+h2{
+  margin-top:0.1rem;
+  text-align: center;
 }
 
 
 .playerInfo {
-  flex: 1; 
-  max-width: 300px;
+  width: 20vw;
+  background-color: vars.$box-bg;
 }
 
 .gameArea {
-  flex: 2; 
+  width: 60vw;
+  background-color: vars.$background-color;
+
+  display: flex;
+  flex-direction: column;      // empile verticalement
+  justify-content: flex-start; // aligne vers le haut (pour que le h2 soit bien au-dessus)
+  align-items: center;         // centre horizontalement les enfants
+  padding-top: 1rem;           // un peu d’espace en haut si besoin
+
+  h2 {
+    margin-bottom: 1rem;       // espace entre le h2 et le bouton
+    text-align: center;
+    width: 100%;
+  }
+
+  .clicker {
+    position: relative;
+    width: 100%;
+    max-width: 800px;        // largeur max de ton image background (à ajuster)
+    padding-top: 50%;        // ratio hauteur/largeur en % (exemple 400/800 = 0.5 = 50%)
+    border-radius: 8px;
+    border-color: vars.$link-color;
+    border-width: 4px;
+    cursor: pointer;
+
+    background-image: url('../../Global/clicker-background.webp');
+    background-size: cover;     // garde le ratio sans couper l’image
+    background-position: center;
+    background-repeat: no-repeat;
+    
+
+    .enemy {
+      position: absolute;
+      bottom: 20%;    // à ajuster selon la position sur le sol
+      left: 70%;      // à ajuster horizontalement
+      transform: translateX(-240%) translateY(28%) scaleX(-1);
+      max-height: $scaledMaxSize * 3;
+      max-width: $scaledMaxSize * 2;
+    }
+
+    .player {
+      position: absolute;
+      bottom: 20%;    // même hauteur que enemy pour le sol
+      left: 30%;      // à ajuster horizontalement
+      transform: translateX(-50%) translateY(19%);
+      max-height: $scaledMaxSize * 2;
+      max-width: $scaledMaxSize * 2;
+    }
+  }
 }
 
 .shop {
-  flex: 1; 
-  max-width: 300px;
+  width: 20vw;
+  background-color: vars.$box-bg;
 }
+

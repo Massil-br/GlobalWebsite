@@ -4,6 +4,12 @@
 :root{
   font-family: vars.$base-font;
 }
+html, body, #root {
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
 
 .appContainer {
   background-color: vars.$background-color;
@@ -13,7 +19,8 @@
 
 .navbar {
   background-color: vars.$nav-color;
-  padding: 1rem 2rem;
+  height: 5vh; // ⬅️ c'est ça qui fixe la hauteur à 10% de l'écran
+  padding: 0 2rem; // enlève le padding vertical pour ne pas dépasser les 10vh
   display: flex;
   justify-content: space-between;
   align-items: center;

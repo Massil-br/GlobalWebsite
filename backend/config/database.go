@@ -29,6 +29,7 @@ func InitDatabase() {
 	db.AutoMigrate(
 		&models.User{},
 		&models.ClickerGameSave{},
+		&models.ClickerGameStats{},
 	)
 	DB = db
 	log.Println("✅ Connected to the database")

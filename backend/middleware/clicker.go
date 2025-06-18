@@ -31,6 +31,24 @@ func EnsureClickerGameSaveExists(next echo.HandlerFunc) echo.HandlerFunc {
 			if err := config.DB.Create(&save).Error; err != nil {
 				return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Impossible de créer la sauvegarde"})
 			}
+
+		} else if err != nil {
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Erreur base de données"})
+		}
+
+		var stats models.ClickerGameStats
+		err = config.DB.Where("user_id= ?", user.ID).First(&stats).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Si aucune sauvegarde, on en crée une par défaut
+			stats = models.ClickerGameStats{
+				UserID:           user.ID,
+				TotalGoldsEarned: 0,
+				TotalClicks:      0,
+				TotalPlayedTime:  0,
+			}
+			if err := config.DB.Create(&stats).Error; err != nil {
+				return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Impossible de créer la sauvegarde"})
+			}
 		} else if err != nil {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Erreur base de données"})
 		}

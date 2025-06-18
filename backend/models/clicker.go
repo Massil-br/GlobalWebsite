@@ -22,8 +22,8 @@ type ClickerGameSave struct {
 type ClickerGameStats struct {
 	gorm.Model
 
-	UserID           uint      `json:"userId"`
-	TotalGoldsEarned float64   `json:"totalGoldsEarned"`
-	TotalClicks      uint      `json:"totalClicks"`
-	TotalPlayedTime  time.Time `json:"totalPlayedTime"`
+	UserID           uint          `json:"userId"`
+	TotalGoldsEarned float64       `json:"totalGoldsEarned"`
+	TotalClicks      uint          `json:"totalClicks"`
+	TotalPlayedTime  time.Duration `json:"totalPlayedTime"`
 }

@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios  from 'axios';
 import { useNavigate } from "react-router-dom";
 import styles from './Register.module.scss';
-import { OkResponse, RegisterRequest } from "../utils/api";
-import { GlobalVars } from "../../App";
+import type { OkResponse, RegisterRequest } from "../utils/types";
+import { GlobalVars } from "../utils/types";
+
+
+
 
 
 
@@ -57,7 +60,7 @@ const Register: React.FC = () => {
       setEmail("");
       setPassword("");
       setConfirmPassword("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data.error || "Something went wrong");
       } else {
