@@ -27,3 +27,13 @@ type ClickerGameStats struct {
 	TotalClicks      uint          `json:"totalClicks"`
 	TotalPlayedTime  time.Duration `json:"totalPlayedTime"`
 }
+
+type ClickerMonster struct {
+	gorm.Model
+	Name        string  `json:"name"`
+	GoldMinDrop float64 `json:"goldMinDrop"`
+	GoldMaxDrop float64 `json:"goldMaxDrop"`
+	MinHp       float64 `json:"minHp"`
+	MaxHp       float64 `json:"maxHp"`
+	Level       uint    `json:"level"`
+}

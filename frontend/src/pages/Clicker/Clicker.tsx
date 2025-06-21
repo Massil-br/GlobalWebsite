@@ -12,6 +12,7 @@ function Clicker() {
   const [clickerGameSave, setClickerGameSave] = useState<ClickerGameSave | null>(null);
   const [clickerGameStats, setClickerGameStats] = useState<ClickerGameStats | null>(null);
   const [clicks, setClicks] = useState<number>(0);
+  const url = GlobalVars.apiUrl;
 
   useEffect(() => {
     const storedUser = getUserFromJwt();
@@ -19,7 +20,7 @@ function Clicker() {
 
     const fetchSave = async () => {
       try {
-        const url = GlobalVars.apiUrl;
+        
         const saveResponse = await axios.get(url + '/getClickerSave', {
           headers: {
             "Content-Type": "application/json",
@@ -44,13 +45,14 @@ function Clicker() {
         }
       }
     };
-
     fetchSave();
+  }, [url]);
 
+
+
+  useEffect(()=>{
     
-
-
-  }, []);
+  })
 
   return (
     <div className={styles.clickerPage}>
@@ -61,6 +63,7 @@ function Clicker() {
             <h2>Infos joueur</h2>
             <ul>
               <li>Username : {user?.username}</li>
+              <li>Clicks : {clicks}</li>
               <li>Golds : {clickerGameSave?.golds}</li>
               <li>Level : {clickerGameSave?.level}</li>
               <li>Step : {clickerGameSave?.step}</li>

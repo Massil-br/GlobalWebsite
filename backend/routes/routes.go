@@ -37,6 +37,7 @@ func InitGetRoutes(e *echo.Echo) {
 func InitPostRoutes(e *echo.Echo) {
 	e.POST("/api/register", controllers.CreateUser)
 	e.POST("/api/login", controllers.Login)
+	e.POST("/api/clicker/createMonster", controllers.CreateClickerMonster, middleware.AuthMiddleware("admin"))
 }
 
 func InitDeleteRoutes(e *echo.Echo) {

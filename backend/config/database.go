@@ -30,6 +30,7 @@ func InitDatabase() {
 		&models.User{},
 		&models.ClickerGameSave{},
 		&models.ClickerGameStats{},
+		&models.ClickerMonster{},
 	)
 	DB = db
 	log.Println("✅ Connected to the database")
