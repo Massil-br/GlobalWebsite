@@ -29,8 +29,11 @@ func InitGetRoutes(e *echo.Echo) {
 	)
 	e.GET("/api/getClickerStats", controllers.GetClickerPlayerStats,
 		middleware.AuthMiddleware("user"),
-		middleware.EnsureClickerGameSaveExists,
+		middleware.EnsureClickerGameStatsExists,
 	)
+	e.GET("/api/clicker/getMonster", controllers.GetClickerMonster,
+	 	middleware.AuthMiddleware("user"),
+	  	middleware.EnsureClickerGameSaveExists)
 
 }
 

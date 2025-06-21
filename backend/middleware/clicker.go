@@ -36,8 +36,19 @@ func EnsureClickerGameSaveExists(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Erreur base de données"})
 		}
 
+		c.Set("clickerGameSave", &save)
+		return next(c)
+	}
+}
+
+
+func EnsureClickerGameStatsExists(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		user := c.Get("user").(*models.User)
+
+		
 		var stats models.ClickerGameStats
-		err = config.DB.Where("user_id= ?", user.ID).First(&stats).Error
+		err := config.DB.Where("user_id = ?", user.ID).First(&stats).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// Si aucune sauvegarde, on en crée une par défaut
 			stats = models.ClickerGameStats{
@@ -53,7 +64,7 @@ func EnsureClickerGameSaveExists(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Erreur base de données"})
 		}
 
-		// Rien à injecter dans le contexte ici
+		c.Set("clickerGameStats", &stats)
 		return next(c)
 	}
 }

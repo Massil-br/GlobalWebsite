@@ -2,39 +2,39 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
 	"net/http"
 
 	"github.com/Massil-br/GlobalWebsite/backend/config"
 	"github.com/Massil-br/GlobalWebsite/backend/models"
+	"github.com/Massil-br/GlobalWebsite/backend/utils"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
 
 func GetClickerPlayerSave(c echo.Context) error {
-	// Récupère l'utilisateur depuis le contexte (déjà authentifié par JWTMiddleware)
-	user := c.Get("user").(*models.User)
-	var save models.ClickerGameSave
-
-	err := config.DB.Where("user_id = ?", user.ID).First(&save).Error
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Erreur lors de la récupération de la sauvegarde du clicker"})
-	}
-
-	return c.JSON(http.StatusOK, save)
+    val := c.Get("clickerGameSave")
+    if val == nil {
+        return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Clicker game save not found in context"})
+    }
+    save, ok := val.(*models.ClickerGameSave)
+    if !ok {
+        return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Invalid type for clickerGameSave"})
+    }
+    return c.JSON(http.StatusOK, save)
 }
 
 func GetClickerPlayerStats(c echo.Context) error {
-	user := c.Get("user").(*models.User)
-	var stats models.ClickerGameStats
-
-	err := config.DB.Where("user_id", user.ID).First(&stats).Error
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{
-			"error": "Erreur lors de la récupération des statistiques du clicker",
-		})
-	}
-
-	return c.JSON(http.StatusOK, stats)
+    val := c.Get("clickerGameStats")
+    if val == nil {
+        return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Clicker game stats not found in context"})
+    }
+    stats, ok := val.(*models.ClickerGameStats)
+    if !ok {
+        return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Invalid type for clickerGameStats"})
+    }
+    return c.JSON(http.StatusOK, stats)
 }
 
 type CreateMonsterReq struct {
@@ -91,5 +91,40 @@ func CreateClickerMonster(c echo.Context) error {
 
 }
 
+type Monster struct {
+	Name        string  `json:"name"`
+	GoldDrop    float64 `json:"goldDrop"`
+	MaxHp		float64 `json:"maxHp"`
+	Hp          float64 `json:"hp"`
+	Level       uint    `json:"level"`
+	
+}
 
+func GetClickerMonster(c echo.Context) error {
+	user := c.Get("user").(*models.User)
+	var clickerGameSave models.ClickerGameSave
+	err := config.DB.Where("user_id = ?", user.ID).First(&clickerGameSave).Error
+	if err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "can't get user game save"})
+	}
+	var monsterList []models.ClickerMonster
+	err = config.DB.Where("level = ?", clickerGameSave.Level).Find(&monsterList).Error
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": fmt.Sprintf("can't find monsters for level : %d", clickerGameSave.Level)})
+	}
+	if len(monsterList) == 0{
+		return c.JSON(http.StatusNotFound, echo.Map{"error": fmt.Sprintf("can't find monsters for level : %d", clickerGameSave.Level)})
+	}
+	num := rand.Intn(len(monsterList))
+	monsterModel := monsterList[num]
+	monster := Monster{
+		Name: monsterModel.Name,
+		GoldDrop: utils.Float64Between(monsterModel.GoldMinDrop, monsterModel.GoldMaxDrop),
+		MaxHp: utils.Float64Between(monsterModel.MinHp, monsterModel.MaxHp),
+		Level : monsterModel.Level,
+	}
+	monster.Hp = monster.MaxHp
+
+	return c.JSON(http.StatusOK, monster)
+}
 
