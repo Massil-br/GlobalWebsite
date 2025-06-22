@@ -3,6 +3,8 @@ import { DecodedJwt, User } from "./types";
 
 
 
+
+
 const getUserFromLocalStorage = (): User | null => {
   const storedUser = localStorage.getItem("jwt_token");
   if (!storedUser) return null;
@@ -34,6 +36,9 @@ export  const getUserFromJwt = (): User| null =>{
   return null;
   
 }
+
+
+
 
 
 

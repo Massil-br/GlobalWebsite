@@ -69,6 +69,15 @@ export interface ClickerGameStats {
     totalPlayedTime: string;
 }
 
+export interface Monster{
+    userId: number;
+    name: string;
+    goldDrop: number;
+    maxHp: number;
+    hp: number;
+    level: number;
+}
+
 
 export interface EnemyImg {
   name: string;

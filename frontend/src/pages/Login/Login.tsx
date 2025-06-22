@@ -49,7 +49,7 @@ const Login: React.FC<LoginProps> = ({  onLogin }) => {
       const data = response.data;
 
       // Stocker le token brut
-      localStorage.setItem("jwt_token", data.token);
+      sessionStorage.setItem("jwt_token", data.token);
 
       // Décoder le token pour obtenir les infos utilisateur
       const decoded: DecodedJwt = jwtDecode(data.token)
@@ -63,8 +63,8 @@ const Login: React.FC<LoginProps> = ({  onLogin }) => {
         updated_at: decoded.updated_at,
       };
 
-      // Stocker l'objet user dans localStorage
-      localStorage.setItem("user", JSON.stringify(user));
+  
+      sessionStorage.setItem("user", JSON.stringify(user));
 
       setSuccess(true);
       setMessage("welcome " + user.username)

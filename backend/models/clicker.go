@@ -37,3 +37,12 @@ type ClickerMonster struct {
 	MaxHp       float64 `json:"maxHp"`
 	Level       uint    `json:"level"`
 }
+
+type ActualMonster struct {
+	UserID   uint    `gorm:"primaryKey" json:"userId"` 
+	Name     string  `json:"name"`
+	GoldDrop float64 `json:"goldDrop"`
+	MaxHp    float64 `json:"maxHp"`
+	Hp       float64 `json:"hp"`
+	Level    uint    `json:"level"`
+}

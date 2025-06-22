@@ -17,16 +17,21 @@ function App() {
   
 
   React.useEffect(() => {
-    const user : User | null = getUserFromJwt();
-    if(user){
-      localStorage.setItem("user", JSON.stringify(user));
+  const savedUser = sessionStorage.getItem("user");
+  if (savedUser) {
+    const userObj: User = JSON.parse(savedUser);
+    setUser(userObj.username);
+  } else {
+    const user: User | null = getUserFromJwt();
+    if (user) {
+      sessionStorage.setItem("user", JSON.stringify(user));
+      setUser(user.username);
     }
-      
-    
-  }, []);
+  }
+}, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('jwt_token');
+    sessionStorage.removeItem('jwt_token');
     setUser(null);
     navigate('/');
   };
@@ -41,7 +46,7 @@ function App() {
         <div className={styles.navRight}>
           {user ? (
             <>
-              <span className={styles.userInfo}>Bienvenue {user}</span>
+              <span className={styles.userInfo}>{user}</span>
               <button onClick={handleLogout} className={styles.logoutButton}>Logout</button>
             </>
           ) : (

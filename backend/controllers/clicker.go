@@ -11,30 +11,31 @@ import (
 	"github.com/Massil-br/GlobalWebsite/backend/utils"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func GetClickerPlayerSave(c echo.Context) error {
-    val := c.Get("clickerGameSave")
-    if val == nil {
-        return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Clicker game save not found in context"})
-    }
-    save, ok := val.(*models.ClickerGameSave)
-    if !ok {
-        return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Invalid type for clickerGameSave"})
-    }
-    return c.JSON(http.StatusOK, save)
+	val := c.Get("clickerGameSave")
+	if val == nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Clicker game save not found in context"})
+	}
+	save, ok := val.(*models.ClickerGameSave)
+	if !ok {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Invalid type for clickerGameSave"})
+	}
+	return c.JSON(http.StatusOK, save)
 }
 
 func GetClickerPlayerStats(c echo.Context) error {
-    val := c.Get("clickerGameStats")
-    if val == nil {
-        return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Clicker game stats not found in context"})
-    }
-    stats, ok := val.(*models.ClickerGameStats)
-    if !ok {
-        return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Invalid type for clickerGameStats"})
-    }
-    return c.JSON(http.StatusOK, stats)
+	val := c.Get("clickerGameStats")
+	if val == nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Clicker game stats not found in context"})
+	}
+	stats, ok := val.(*models.ClickerGameStats)
+	if !ok {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Invalid type for clickerGameStats"})
+	}
+	return c.JSON(http.StatusOK, stats)
 }
 
 type CreateMonsterReq struct {
@@ -91,40 +92,192 @@ func CreateClickerMonster(c echo.Context) error {
 
 }
 
-type Monster struct {
-	Name        string  `json:"name"`
-	GoldDrop    float64 `json:"goldDrop"`
-	MaxHp		float64 `json:"maxHp"`
-	Hp          float64 `json:"hp"`
-	Level       uint    `json:"level"`
-	
-}
-
 func GetClickerMonster(c echo.Context) error {
 	user := c.Get("user").(*models.User)
+
+	var ActualMonster models.ActualMonster
+
+	err := config.DB.Where("user_id = ?", user.ID).First(&ActualMonster).Error
+	if err == nil && ActualMonster.Hp > 0 {
+		return c.JSON(http.StatusOK, ActualMonster)
+	}
+
 	var clickerGameSave models.ClickerGameSave
-	err := config.DB.Where("user_id = ?", user.ID).First(&clickerGameSave).Error
+
+	err = config.DB.Where("user_id = ?", user.ID).First(&clickerGameSave).Error
 	if err != nil {
 		return c.JSON(http.StatusNotFound, echo.Map{"error": "can't get user game save"})
 	}
+
 	var monsterList []models.ClickerMonster
+
 	err = config.DB.Where("level = ?", clickerGameSave.Level).Find(&monsterList).Error
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": fmt.Sprintf("can't find monsters for level : %d", clickerGameSave.Level)})
 	}
-	if len(monsterList) == 0{
+
+	if len(monsterList) == 0 {
 		return c.JSON(http.StatusNotFound, echo.Map{"error": fmt.Sprintf("can't find monsters for level : %d", clickerGameSave.Level)})
 	}
+
 	num := rand.Intn(len(monsterList))
 	monsterModel := monsterList[num]
-	monster := Monster{
-		Name: monsterModel.Name,
+
+	monster := models.ActualMonster{
+		UserID:   user.ID,
+		Name:     monsterModel.Name,
 		GoldDrop: utils.Float64Between(monsterModel.GoldMinDrop, monsterModel.GoldMaxDrop),
-		MaxHp: utils.Float64Between(monsterModel.MinHp, monsterModel.MaxHp),
-		Level : monsterModel.Level,
+		MaxHp:    utils.Float64Between(monsterModel.MinHp, monsterModel.MaxHp),
+		Level:    monsterModel.Level,
 	}
 	monster.Hp = monster.MaxHp
+
+	err = config.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}}, // PRIMARY KEY
+		DoUpdates: clause.AssignmentColumns([]string{"name", "gold_drop", "max_hp", "hp", "level"}),
+	}).Create(&monster).Error
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to create/update monster"})
+	}
 
 	return c.JSON(http.StatusOK, monster)
 }
 
+func Click(c echo.Context) error {
+	user := c.Get("user").(*models.User)
+
+	tx := config.DB.Begin()
+	if tx.Error != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to start transaction"})
+	}
+
+	var save models.ClickerGameSave
+
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ?", user.ID).First(&save).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "user save not found"})
+	}
+
+	var stats models.ClickerGameStats
+	err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ?", user.ID).First(&stats).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "user stats not found"})
+	}
+
+	var monster models.ActualMonster
+	err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ?", user.ID).First(&monster).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "actual monster not found"})
+	}
+
+	monster.Hp -= save.ClickDamage
+	if monster.Hp < 0 {
+		monster.Hp = 0
+	}
+
+	if monster.Hp == 0 {
+		save.Golds += monster.GoldDrop
+		stats.TotalGoldsEarned += monster.GoldDrop
+	}
+
+	stats.TotalClicks++
+
+	err = tx.Save(&save).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to update save"})
+	}
+
+	err = tx.Save(&stats).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to update stats"})
+	}
+
+	err = tx.Save(&monster).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to update monster"})
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to commit transaction"})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{"message": "click damage success"})
+}
+
+func AutoHunt(c echo.Context) error {
+	user := c.Get("user").(*models.User)
+
+	tx := config.DB.Begin()
+	if tx.Error != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to start transaction"})
+	}
+
+	var monster models.ActualMonster
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ?", user.ID).First(&monster).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "actual monster not found"})
+	}
+
+	var save models.ClickerGameSave
+	err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ?", user.ID).First(&save).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "user clicker save not found"})
+	}
+
+	var stats models.ClickerGameStats
+	err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ?", user.ID).First(&stats).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "user clicker stats not found"})
+	}
+
+	monster.Hp -= save.AutoHuntGrokDPS
+
+	if monster.Hp < 0 {
+		monster.Hp = 0
+	}
+
+	if monster.Hp == 0 {
+		save.Golds += monster.GoldDrop
+		stats.TotalGoldsEarned += monster.GoldDrop
+	}
+
+	stats.TotalClicks++
+
+	err = tx.Save(&save).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to update save"})
+	}
+
+	err = tx.Save(&stats).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to update stats"})
+	}
+
+	err = tx.Save(&monster).Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to update monster"})
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to commit transaction"})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{"message": "auto hunt  damage success"})
+
+}

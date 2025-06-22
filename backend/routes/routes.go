@@ -10,6 +10,7 @@ func InitRoutes(e *echo.Echo) {
 	InitGetRoutes(e)
 	InitPostRoutes(e)
 	InitDeleteRoutes(e)
+	InitPutRoutes(e)
 
 }
 
@@ -23,18 +24,33 @@ func InitGetRoutes(e *echo.Echo) {
 		middleware.AuthMiddleware("user"),
 	)
 
-	e.GET("/api/getClickerSave", controllers.GetClickerPlayerSave,
+	e.GET("/api/clicker/getClickerSave", controllers.GetClickerPlayerSave,
 		middleware.AuthMiddleware("user"),
 		middleware.EnsureClickerGameSaveExists,
 	)
-	e.GET("/api/getClickerStats", controllers.GetClickerPlayerStats,
+	e.GET("/api/clicker/getClickerStats", controllers.GetClickerPlayerStats,
 		middleware.AuthMiddleware("user"),
 		middleware.EnsureClickerGameStatsExists,
 	)
 	e.GET("/api/clicker/getMonster", controllers.GetClickerMonster,
 	 	middleware.AuthMiddleware("user"),
-	  	middleware.EnsureClickerGameSaveExists)
+	  	middleware.EnsureClickerGameSaveExists,
+		middleware.EnsureClickerGameStatsExists,
+	)
 
+}
+
+func InitPutRoutes(e *echo.Echo){
+	e.PUT("/api/clicker/click", controllers.Click,
+		middleware.AuthMiddleware("user"),
+		middleware.EnsureClickerGameSaveExists,
+		middleware.EnsureClickerGameStatsExists,
+	)
+	e.PUT("/api/clicker/autoHunt", controllers.Click,
+		middleware.AuthMiddleware("user"),
+		middleware.EnsureClickerGameSaveExists,
+		middleware.EnsureClickerGameStatsExists,
+	)
 }
 
 func InitPostRoutes(e *echo.Echo) {
