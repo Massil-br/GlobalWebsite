@@ -38,6 +38,8 @@ func InitGetRoutes(e *echo.Echo) {
 		middleware.EnsureClickerGameStatsExists,
 	)
 
+	e.GET("/api/clicker/getMonsterModels", controllers.GetClickerMonsterModels, middleware.AuthMiddleware("admin"))
+
 }
 
 func InitPutRoutes(e *echo.Echo){

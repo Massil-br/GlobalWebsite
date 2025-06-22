@@ -109,6 +109,13 @@ func GetClickerMonster(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, echo.Map{"error": "can't get user game save"})
 	}
 
+	clickerGameSave.Step++
+	if (clickerGameSave.Step >= 10){
+		clickerGameSave.Level++
+		clickerGameSave.Step = 1
+	}
+
+
 	var monsterList []models.ClickerMonster
 
 	err = config.DB.Where("level = ?", clickerGameSave.Level).Find(&monsterList).Error
@@ -279,5 +286,18 @@ func AutoHunt(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{"message": "auto hunt  damage success"})
+
+}
+
+
+func GetClickerMonsterModels(c echo.Context) error{
+	var monsterModels []models.ClickerMonster
+
+	err := config.DB.Find(&monsterModels).Error
+	if err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error":"Couldn't find monster models list"})
+	}
+
+	return c.JSON(http.StatusOK, monsterModels)
 
 }

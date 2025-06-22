@@ -22,7 +22,7 @@ func EnsureClickerGameSaveExists(next echo.HandlerFunc) echo.HandlerFunc {
 				UserID:            user.ID,
 				Golds:             0,
 				Level:             1,
-				Step:              1,
+				Step:              0,
 				ClickLevel:        1,
 				ClickDamage:       1,
 				AutoHuntGrokLevel: 0,

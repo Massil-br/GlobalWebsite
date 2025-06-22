@@ -78,6 +78,27 @@ export interface Monster{
     level: number;
 }
 
+export interface CreateMonsterRequest{
+    name: string;
+    goldMinDrop: number;
+    goldMaxDrop: number;
+    minHp: number;
+    maxHp: number;
+    level: number;
+}
+
+export interface MonsterModel{
+    id : number;
+    created_at: string;
+    updated_at: string;
+    name: string;
+    goldMinDrop: number;
+    goldMaxDrop: number;
+    minHp: number;
+    maxHp: number;
+    level: number
+}
+
 
 export interface EnemyImg {
   name: string;

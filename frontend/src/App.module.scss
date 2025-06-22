@@ -63,3 +63,48 @@ html, body, #root {
     background-color: vars.$button-hover;
   }
 }
+
+
+.navMid {
+  position: relative;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdownToggle {
+  background-color: #333;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  z-index: 1000;
+}
+
+.dropdownMenu a {
+  padding: 0.5rem;
+  text-decoration: none;
+  color: #333;
+  border-radius: 4px;
+}
+
+.dropdownMenu a:hover {
+  background-color: #f0f0f0;
+}

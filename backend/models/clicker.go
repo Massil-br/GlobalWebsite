@@ -2,12 +2,10 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type ClickerGameSave struct {
-	gorm.Model
+	Model
 
 	UserID            uint    `json:"userId"`
 	Golds             float64 `gorm:"default:0" json:"golds"`
@@ -20,7 +18,7 @@ type ClickerGameSave struct {
 }
 
 type ClickerGameStats struct {
-	gorm.Model
+	Model
 
 	UserID           uint          `json:"userId"`
 	TotalGoldsEarned float64       `json:"totalGoldsEarned"`
@@ -29,7 +27,7 @@ type ClickerGameStats struct {
 }
 
 type ClickerMonster struct {
-	gorm.Model
+	Model
 	Name        string  `json:"name"`
 	GoldMinDrop float64 `json:"goldMinDrop"`
 	GoldMaxDrop float64 `json:"goldMaxDrop"`
