@@ -64,8 +64,8 @@ type ActualMonster struct {
 
 type Shop struct {
 	Model
-	ClickerGameSaveId uint            `json:"clickerGameSaveId"`
-	ClickerGameSave   ClickerGameSave `gorm:"index:idx_save_target,unique;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	ClickerGameSaveId uint            `json:"clickerGameSaveId" gorm:"index:idx_save_target,unique"`
+	ClickerGameSave   ClickerGameSave `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Name              string          `json:"name"`
 	Description       string          `json:"description"`
 	Price             float64         `json:"price"`

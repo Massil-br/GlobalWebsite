@@ -3,6 +3,8 @@ package middleware
 import (
 	"errors"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/Massil-br/GlobalWebsite/backend/config"
 	"github.com/Massil-br/GlobalWebsite/backend/models"
@@ -29,13 +31,11 @@ func EnsureClickerGameSaveExists(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Database error"})
 		}
 
-		
 		var modelsList []models.ClickerPassiveAllyModel
 		if err := config.DB.Find(&modelsList).Error; err != nil {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "error while finding alliesModels"})
 		}
 
-		
 		existingModelIDs := make(map[uint]bool)
 		for _, ally := range save.ClickerPassiveAllies {
 			existingModelIDs[ally.ClickerPassiveAllyModelID] = true
@@ -54,13 +54,11 @@ func EnsureClickerGameSaveExists(next echo.HandlerFunc) echo.HandlerFunc {
 			}
 		}
 
-		
 		if len(alliesToCreate) > 0 {
 			if err := config.DB.Create(&alliesToCreate).Error; err != nil {
 				return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Error while creating missing allies"})
 			}
 
-			
 			if err := config.DB.Preload("ClickerPassiveAllies.ClickerPassiveAllyModel").
 				First(&save, save.ID).Error; err != nil {
 				return c.JSON(http.StatusInternalServerError, echo.Map{"error": "post-creation error"})
@@ -69,23 +67,23 @@ func EnsureClickerGameSaveExists(next echo.HandlerFunc) echo.HandlerFunc {
 
 		var shop models.Shop
 
-		err  = config.DB.Where("clicker_game_save_id = ? AND target = ?", save.ID, "clicker").First(&shop).Error
-		if errors.Is(err,gorm.ErrRecordNotFound){
+		err = config.DB.Where("clicker_game_save_id = ? AND target = ?", save.ID, "clicker").First(&shop).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			newShop := models.Shop{
 				ClickerGameSaveId: save.ID,
-				Name: "Shop clicker",
-				Description: "Upgrade of clicker",
-				Price:5,
-				Level: 1,
-				Target: "clicker",
+				Name:              "Shop clicker",
+				Description:       "Upgrade of clicker",
+				Price:             5,
+				Level:             1,
+				Target:            "clicker",
 			}
 
 			err := config.DB.Create(&newShop).Error
-			if err != nil{
+			if err != nil {
 				return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Error while creating clicker shop"})
 			}
-		}else if err != nil{
-			return c.JSON(http.StatusInternalServerError, echo.Map{"error":"Error while finding shops of clicker"})
+		} else if err != nil {
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Error while finding shops of clicker"})
 		}
 
 		for _, ally := range save.ClickerPassiveAllies {
@@ -93,14 +91,14 @@ func EnsureClickerGameSaveExists(next echo.HandlerFunc) echo.HandlerFunc {
 			err := config.DB.Where("clicker_game_save_id = ? AND target = ?", save.ID, ally.Name).
 				First(&shop).Error
 			price := ally.ClickerPassiveAllyModel.BasePrice
-			
+
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				
+
 				newShop := models.Shop{
 					ClickerGameSaveId: save.ID,
 					Name:              "Shop " + ally.Name,
 					Description:       "Upgrade of   " + ally.Name,
-					Price:             price, 
+					Price:             price,
 					Target:            ally.Name,
 				}
 				if err := config.DB.Create(&newShop).Error; err != nil {
@@ -110,22 +108,17 @@ func EnsureClickerGameSaveExists(next echo.HandlerFunc) echo.HandlerFunc {
 			} else if err != nil {
 				return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Error while finding shops of " + ally.Name})
 			}
-		}	
+		}
 
-
-		
 		c.Set("clickerGameSave", &save)
 		return next(c)
 	}
 }
 
-
-
 func EnsureClickerGameStatsExists(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		user := c.Get("user").(*models.User)
 
-		
 		var stats models.ClickerGameStats
 		err := config.DB.Where("user_id = ?", user.ID).First(&stats).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -148,5 +141,17 @@ func EnsureClickerGameStatsExists(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
+var userCooldowns = make(map[uint]time.Time)
+var cooldownMutex sync.Mutex
 
+func CanUserHunt(userID uint) bool {
+	cooldownMutex.Lock()
+	defer cooldownMutex.Unlock()
 
+	lastTime, exists := userCooldowns[userID]
+	if !exists || time.Since(lastTime) >= 900*time.Millisecond {
+		userCooldowns[userID] = time.Now()
+		return true
+	}
+	return false
+}

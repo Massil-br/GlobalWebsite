@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Massil-br/GlobalWebsite/backend/config"
+	"github.com/Massil-br/GlobalWebsite/backend/middleware"
 	"github.com/Massil-br/GlobalWebsite/backend/models"
 	"github.com/Massil-br/GlobalWebsite/backend/utils"
 	"github.com/labstack/echo/v4"
@@ -110,12 +111,6 @@ func GetClickerMonster(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, echo.Map{"error": "can't get user game save"})
 	}
 
-	clickerGameSave.Step++
-	if clickerGameSave.Step >= 10 {
-		clickerGameSave.Level++
-		clickerGameSave.Step = 1
-	}
-
 	var monsterList []models.ClickerMonster
 
 	err = config.DB.Where("level = ?", clickerGameSave.Level).Find(&monsterList).Error
@@ -145,6 +140,17 @@ func GetClickerMonster(c echo.Context) error {
 	}).Create(&monster).Error
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to create/update monster"})
+	}
+
+	clickerGameSave.Step++
+	if clickerGameSave.Step > 10 {
+		clickerGameSave.Level++
+		clickerGameSave.Step = 1
+	}
+
+	err = config.DB.Save(&clickerGameSave).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to save clickerGameSave"})
 	}
 
 	return c.JSON(http.StatusOK, monster)
@@ -178,6 +184,11 @@ func Click(c echo.Context) error {
 	if err != nil {
 		tx.Rollback()
 		return c.JSON(http.StatusNotFound, echo.Map{"error": "actual monster not found"})
+	}
+
+	if monster.Hp <= 0 {
+		monster.Hp = 0
+		return c.JSON(http.StatusNotAcceptable, echo.Map{"error": "Monster already dead"})
 	}
 
 	monster.Hp -= save.ClickDamage
@@ -222,20 +233,19 @@ func Click(c echo.Context) error {
 func AutoHunt(c echo.Context) error {
 	user := c.Get("user").(*models.User)
 
+	if !middleware.CanUserHunt(user.ID) {
+		return c.JSON(http.StatusTooManyRequests, echo.Map{"error": "You can't cheat on hunt timing !"})
+	}
+
 	tx := config.DB.Begin()
 	if tx.Error != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to start transaction"})
 	}
 
-	var monster models.ActualMonster
-	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ?", user.ID).First(&monster).Error
-	if err != nil {
-		tx.Rollback()
-		return c.JSON(http.StatusNotFound, echo.Map{"error": "actual monster not found"})
-	}
-
 	var save models.ClickerGameSave
-	err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ?", user.ID).First(&save).Error
+	err := tx.Preload("ClickerPassiveAllies").Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("user_id = ?", user.ID).
+		First(&save).Error
 	if err != nil {
 		tx.Rollback()
 		return c.JSON(http.StatusNotFound, echo.Map{"error": "user clicker save not found"})
@@ -248,26 +258,43 @@ func AutoHunt(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, echo.Map{"error": "user clicker stats not found"})
 	}
 
-	err = tx.Preload("ClickerPassiveAllies").Clauses(clause.Locking{Strength: "UPDATE"}).
-    Where("user_id = ?", user.ID).
-    First(&save).Error
+	stats.TotalPlayedTime += time.Second
 
-	if err != nil{
-		c.JSON(http.StatusInternalServerError, echo.Map{"error":"can't Preload ClickerPassiveAllies"})
+	// Tenter de récupérer le monstre, si aucun, on continue (car on veut update le temps quand même)
+	var monster models.ActualMonster
+	err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("user_id = ?", user.ID).First(&monster).Error
+	if err != nil {
+		// Pas de monstre trouvé, on commit quand même le temps joué
+		if err := tx.Save(&stats).Error; err != nil {
+			tx.Rollback()
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to update stats"})
+		}
+		if err := tx.Commit().Error; err != nil {
+			tx.Rollback()
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to commit transaction"})
+		}
+		return c.JSON(http.StatusOK, echo.Map{"message": "auto hunt: no monster but time updated"})
 	}
 
-	var totalDps float64
-	totalDps = 0
-	alliesNum := len(save.ClickerPassiveAllies)
-
-	if alliesNum > 0 {
-		for i := 0; i < len(save.ClickerPassiveAllies); i++ {
-			totalDps += save.ClickerPassiveAllies[i].Dps
+	if monster.Hp <= 0 {
+		monster.Hp = 0
+		if err := tx.Save(&stats).Error; err != nil {
+			tx.Rollback()
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to update stats"})
 		}
+		if err := tx.Commit().Error; err != nil {
+			tx.Rollback()
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to commit transaction"})
+		}
+		return c.JSON(http.StatusNotAcceptable, echo.Map{"error": "Monster already dead"})
+	}
+
+	totalDps := 0.0
+	for _, ally := range save.ClickerPassiveAllies {
+		totalDps += ally.Dps
 	}
 
 	monster.Hp -= totalDps
-
 	if monster.Hp < 0 {
 		monster.Hp = 0
 	}
@@ -277,36 +304,24 @@ func AutoHunt(c echo.Context) error {
 		stats.TotalGoldsEarned += monster.GoldDrop
 	}
 
-	stats.TotalPlayedTime += time.Second
-
-	
-
-	err = tx.Save(&save).Error
-	if err != nil {
+	if err := tx.Save(&save).Error; err != nil {
 		tx.Rollback()
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to update save"})
 	}
-
-	err = tx.Save(&stats).Error
-	if err != nil {
+	if err := tx.Save(&stats).Error; err != nil {
 		tx.Rollback()
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to update stats"})
 	}
-
-	err = tx.Save(&monster).Error
-	if err != nil {
+	if err := tx.Save(&monster).Error; err != nil {
 		tx.Rollback()
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to update monster"})
 	}
-
-	err = tx.Commit().Error
-	if err != nil {
+	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "failed to commit transaction"})
 	}
 
-	return c.JSON(http.StatusOK, echo.Map{"message": "auto hunt  damage success"})
-
+	return c.JSON(http.StatusOK, echo.Map{"message": "auto hunt damage success"})
 }
 
 func GetClickerMonsterModels(c echo.Context) error {
@@ -342,7 +357,7 @@ func CreateAllyModel(c echo.Context) error {
 	allyModel := models.ClickerPassiveAllyModel{
 		Name:        req.Name,
 		BaseDps:     req.BaseDps,
-		BasePrice: 	 req.BasePrice,
+		BasePrice:   req.BasePrice,
 		Description: req.Description,
 	}
 
