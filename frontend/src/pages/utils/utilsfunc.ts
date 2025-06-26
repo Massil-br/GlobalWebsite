@@ -41,5 +41,17 @@ export  const getUserFromJwt = (): User| null =>{
 
 
 
+export function formatDuration(nanoseconds: number): string {
+  const totalSeconds = Math.floor(nanoseconds / 1_000_000_000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${hours}h ${minutes}m ${seconds}s`;
+}
+
+
+
+
 
 export default getUserFromLocalStorage;

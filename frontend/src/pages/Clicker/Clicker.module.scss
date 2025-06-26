@@ -74,7 +74,7 @@ h2{
       position: absolute;
       bottom: 20%;    // à ajuster selon la position sur le sol
       left: 70%;      // à ajuster horizontalement
-      transform: translateX(-240%) translateY(28%) scaleX(-1);
+      transform: translateX(-200%) translateY(28%) scaleX(-1);
       max-height: $scaledMaxSize * 3;
       max-width: $scaledMaxSize * 2;
     }
@@ -86,6 +86,10 @@ h2{
       transform: translateX(-50%) translateY(19%);
       max-height: $scaledMaxSize * 2;
       max-width: $scaledMaxSize * 2;
+    }
+
+    .monsterHp{
+      color: vars.$text-color
     }
   }
 }

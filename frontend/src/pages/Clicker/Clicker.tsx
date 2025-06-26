@@ -1,11 +1,12 @@
 import axios, { AxiosError } from "axios";
 import { useEffect, useState, useCallback } from "react";
-import type { ClickerGameSave, ClickerGameStats, Monster, User } from "../utils/types";
+import type { ClickerGameSave,ClickerGameStats,  Monster, Shop, UpgradeReq, User } from "../utils/types";
 import { GlobalVars } from "../utils/types";
 import styles from './Clicker.module.scss';
-import { getUserFromJwt } from "../utils/utilsfunc";
+import { formatDuration, getUserFromJwt } from "../utils/utilsfunc";
 import { enemiesList, playerSprites } from "../utils/ressourceLoader";
 import { useNavigate } from "react-router-dom";
+import { useClearErrorEvery3s } from "../utils/RequireAdmin";
 
 
 function Clicker() {
@@ -14,6 +15,11 @@ function Clicker() {
   const [clickerGameSave, setClickerGameSave] = useState<ClickerGameSave | null>(null);
   const [clickerGameStats, setClickerGameStats] = useState<ClickerGameStats | null>(null);
   const [monsterHp, setMonsterHp]= useState<number>(0);
+  const [shops, setShops] = useState<Shop[] | null>(null);
+  const [quantity, setShopQuantity] = useState<number>(1)
+ 
+
+
   const url = GlobalVars.apiUrl;
   const navigate = useNavigate();
   
@@ -29,33 +35,50 @@ function Clicker() {
 
 
   //récupérationd de save
-  const fetchSave = useCallback(async () => {
-    try {
-      const saveResponse = await axios.get(url + '/clicker/getClickerSave', {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${sessionStorage.getItem("jwt_token")}`,
-        },
-      });
-      setClickerGameSave(saveResponse.data);
+ const fetchSave = useCallback(async () => {
+  try {
+    const saveResponse = await axios.get(url + '/clicker/getClickerSave', {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sessionStorage.getItem("jwt_token")}`,
+      },
+    });
+    setClickerGameSave(saveResponse.data);
 
-      const statsResponse = await axios.get(url + '/clicker/getClickerStats', {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${sessionStorage.getItem("jwt_token")}`,
-        },
-      });
-      setClickerGameStats(statsResponse.data);
+    const statsResponse = await axios.get(url + '/clicker/getClickerStats', {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sessionStorage.getItem("jwt_token")}`,
+      },
+    });
+    setClickerGameStats(statsResponse.data);
 
-    } catch (err: any) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data.message || "Erreur API");
-        redirectToLogin(err);
-      } else {
-        setError("Network error");
-      }
+    const shopResponse = await axios.get<Shop[]>(url + '/clicker/getShops', {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sessionStorage.getItem("jwt_token")}`,
+      },
+    });
+
+    // Tri : "clicker" d'abord, puis par date de création croissante
+    const sortedShops = [...shopResponse.data].sort((a, b) => {
+      if (a.target === "clicker") return -1;
+      if (b.target === "clicker") return 1;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
+
+    setShops(sortedShops);
+
+  } catch (err: any) {
+    if (axios.isAxiosError(err)) {
+      setError(err.response?.data.error || "Erreur API");
+      redirectToLogin(err);
+    } else {
+      setError("Network error");
     }
-  }, [url,redirectToLogin]); 
+  }
+}, [url, redirectToLogin]);
+
 
   //envoit comme quoi on a clické au backend
   const click = async () => {
@@ -75,7 +98,7 @@ function Clicker() {
 
     } catch (err: any) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data.message || "Invalid credentials");
+        setError(err.response?.data.error || "Invalid credentials");
         redirectToLogin(err);
       } else {
         setError("Network error");
@@ -84,6 +107,39 @@ function Clicker() {
 
     getMonster();
   };
+
+
+  const Upgrade = useCallback(
+    async (targetId: number) => {
+      try {
+        const upgradeReq: UpgradeReq = {
+          quantity, // utilise le state actuel
+          targetShopId: targetId,
+        };
+
+        await axios.post(
+          url + "/clicker/upgrade",
+          upgradeReq,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${sessionStorage.getItem("jwt_token")}`,
+            },
+          }
+        );
+
+        fetchSave();
+      } catch (err: any) {
+        if (axios.isAxiosError(err)) {
+          setError(err.response?.data.error || "Invalid credentials");
+          redirectToLogin(err);
+        } else {
+          setError("Network error");
+        }
+      }
+    },
+    [fetchSave, redirectToLogin, url, quantity]
+  );
 
 
   const getMonster =useCallback(async () =>{
@@ -98,15 +154,47 @@ function Clicker() {
 
     }catch(err : any){
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data.message || "Invalid credentials");
+        setError(err.response?.data.error || "Invalid credentials");
       }else{
         setError("Network error");
       }
     }
   },[url])
 
+  useClearErrorEvery3s(setError);
 
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const call = async () => {
+        try {
+          await axios.put(
+            url + '/clicker/autoHunt',
+            {},
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${sessionStorage.getItem("jwt_token")}`,
+              },
+            }
+          );
+          await fetchSave();
+          getMonster();
+        } catch (err: any) {
+          if (axios.isAxiosError(err)) {
+            setError(err.response?.data?.error || "Invalid credentials");
+            redirectToLogin(err);
+          } else {
+            setError("Network error");
+          }
+        }
+      };
+
+      call();
+    }, 1000);
+
+    return () => clearInterval(interval);
+ }, [fetchSave, getMonster, redirectToLogin, setError, url]);
 
   //récupère les données initiales
   useEffect(() => {
@@ -114,6 +202,7 @@ function Clicker() {
     setUser(storedUser);
     getMonster();
     fetchSave();
+    setShopQuantity(1);
   }, [fetchSave, getMonster]);
 
  
@@ -121,7 +210,11 @@ function Clicker() {
   return (
     <div className={styles.clickerPage}>
       <div className={styles.error}>{error ? error : " "}</div>
+
       <div className={styles.gameLayout}>
+
+
+
         <div className={styles.playerInfo}>
           <div>
             <h2>Infos joueur</h2>
@@ -131,9 +224,17 @@ function Clicker() {
               <li>Level : {clickerGameSave?.level}</li>
               <li>Step : {clickerGameSave?.step}</li>
               <li>Click Level : {clickerGameSave?.clickLevel}</li>
-              <li>Click Damage : {clickerGameSave?.clickDamage}</li>
-              <li>Grok Level : {clickerGameSave?.autoHuntGrokLevel}</li>
-              <li>Grok DPS : {clickerGameSave?.autoHuntGrokDps}</li>
+             <li>Click Damage : {clickerGameSave ? Math.floor(clickerGameSave.clickDamage) : "..."}</li>
+              {clickerGameSave?.clickerPassiveAllies.map((ally,i)=>(
+                <ul key={clickerGameSave.id}>
+                  <li>Name : {ally.name}</li>
+                  <li>level: {ally.level}</li>
+                  <li>DPS : {Math.floor(ally.dps)}</li>
+                  <li>Description : {ally.description}</li>
+                </ul>
+                
+              ))}
+              
             </ul>
           </div>
           <div>
@@ -141,20 +242,46 @@ function Clicker() {
             <ul>
               <li>Total Golds Earned : {clickerGameStats ? Math.floor(clickerGameStats?.totalGoldsEarned) : "not found"}</li>
               <li>Total Clicks : {clickerGameStats?.totalClicks}</li>
-              <li>Total Played Time: {clickerGameStats?.totalPlayedTime}</li>
+              <li>Total Played Time: {clickerGameStats? formatDuration(clickerGameStats.totalPlayedTime) : "..."}</li>
             </ul>
           </div>
         </div>
+
+
+
         <div className={styles.gameArea}>
           <h2>Jeu</h2>
           <button className={styles.clicker} onClick={click}> {/* <- ici tu avais oublié d'appeler la fonction */}
             <img className={styles.enemy} src={enemiesList?.[0]?.sprites?.[0]} alt={enemiesList?.[0]?.name || "enemy"} />
             <img className={styles.player} src={playerSprites?.sprites?.[0]} alt="player" />
-            <p>HP : {monsterHp}</p>
+            <p className={styles.monsterHp}>HP : {monsterHp}</p>
           </button>
         </div>
-        <div className={styles.shop}>Shop</div>
+
+
+
+        <div className={styles.shop}>
+            <h2>Shop</h2>
+            {shops?.map((shop,i)=>(
+              <div key={shop.id}>
+              <ul>
+                <li>{shop?.name}</li>
+                <li>Level : {shop?.level}</li>
+                <li>Description : {shop.description}</li>
+                <li>Price/U : {Math.floor(shop.price)}</li>
+                <button onClick={()=>Upgrade(shop.id)}>
+                  <h2> {Math.floor(shop.price*quantity)} Golds</h2>
+                </button>
+              </ul>
+              </div>
+              ))}
+        </div>
+
       </div>
+
+
+
+
     </div>
   );
 }

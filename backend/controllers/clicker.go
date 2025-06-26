@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/Massil-br/GlobalWebsite/backend/config"
 	"github.com/Massil-br/GlobalWebsite/backend/models"
@@ -110,11 +111,10 @@ func GetClickerMonster(c echo.Context) error {
 	}
 
 	clickerGameSave.Step++
-	if (clickerGameSave.Step >= 10){
+	if clickerGameSave.Step >= 10 {
 		clickerGameSave.Level++
 		clickerGameSave.Step = 1
 	}
-
 
 	var monsterList []models.ClickerMonster
 
@@ -248,7 +248,25 @@ func AutoHunt(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, echo.Map{"error": "user clicker stats not found"})
 	}
 
-	monster.Hp -= save.AutoHuntGrokDPS
+	err = tx.Preload("ClickerPassiveAllies").Clauses(clause.Locking{Strength: "UPDATE"}).
+    Where("user_id = ?", user.ID).
+    First(&save).Error
+
+	if err != nil{
+		c.JSON(http.StatusInternalServerError, echo.Map{"error":"can't Preload ClickerPassiveAllies"})
+	}
+
+	var totalDps float64
+	totalDps = 0
+	alliesNum := len(save.ClickerPassiveAllies)
+
+	if alliesNum > 0 {
+		for i := 0; i < len(save.ClickerPassiveAllies); i++ {
+			totalDps += save.ClickerPassiveAllies[i].Dps
+		}
+	}
+
+	monster.Hp -= totalDps
 
 	if monster.Hp < 0 {
 		monster.Hp = 0
@@ -259,7 +277,9 @@ func AutoHunt(c echo.Context) error {
 		stats.TotalGoldsEarned += monster.GoldDrop
 	}
 
-	stats.TotalClicks++
+	stats.TotalPlayedTime += time.Second
+
+	
 
 	err = tx.Save(&save).Error
 	if err != nil {
@@ -289,15 +309,155 @@ func AutoHunt(c echo.Context) error {
 
 }
 
-
-func GetClickerMonsterModels(c echo.Context) error{
+func GetClickerMonsterModels(c echo.Context) error {
 	var monsterModels []models.ClickerMonster
 
 	err := config.DB.Find(&monsterModels).Error
 	if err != nil {
-		return c.JSON(http.StatusNotFound, echo.Map{"error":"Couldn't find monster models list"})
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Couldn't find monster models list"})
 	}
 
 	return c.JSON(http.StatusOK, monsterModels)
+
+}
+
+type CreateAllyModelReq struct {
+	Name        string  `json:"name"`
+	BaseDps     float64 `json:"baseDps"`
+	BasePrice   float64 `json:"basePrice"`
+	Description string  `json:"description"`
+}
+
+func CreateAllyModel(c echo.Context) error {
+	var req CreateAllyModelReq
+	err := c.Bind(&req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid Input"})
+	}
+
+	if req.Name == "" || req.BaseDps <= 0 || req.Description == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Base dps must be at least 1, name & description must be not empty"})
+	}
+
+	allyModel := models.ClickerPassiveAllyModel{
+		Name:        req.Name,
+		BaseDps:     req.BaseDps,
+		BasePrice: 	 req.BasePrice,
+		Description: req.Description,
+	}
+
+	err = config.DB.Create(&allyModel).Error
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Coudn't create ally model"})
+	}
+
+	return c.JSON(http.StatusCreated, echo.Map{"message": "ClickerAllyModel created"})
+}
+
+func GetShops(c echo.Context) error {
+	save := c.Get("clickerGameSave").(*models.ClickerGameSave)
+
+	var shops []models.Shop
+
+	err := config.DB.Where("clicker_game_save_id = ?", save.ID).Find(&shops).Error
+	if err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Couldn't find shops"})
+	}
+	return c.JSON(http.StatusOK, shops)
+
+}
+
+type UpgradeReq struct {
+	Quantity     uint `json:"quantity"`
+	TargetShopId uint `json:"targetShopId"`
+}
+
+func Upgrade(c echo.Context) error {
+
+	var req UpgradeReq
+
+	err := c.Bind(&req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid Input"})
+	}
+
+	if req.Quantity <= 0 {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid input, quantity must be higher than 0"})
+	}
+
+	var shop models.Shop
+
+	err = config.DB.Where("id = ?", req.TargetShopId).First(&shop).Error
+
+	if err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Can't find targeted shop"})
+	}
+
+	save := c.Get("clickerGameSave").(*models.ClickerGameSave)
+
+	priceToPay := shop.Price * float64(req.Quantity)
+
+	if save.Golds < priceToPay {
+		return c.JSON(http.StatusForbidden, echo.Map{"error": "You don't have enough money to buy this upgrade(s)"})
+	}
+
+	if shop.Target == "clicker" {
+		save.Golds -= priceToPay
+		save.ClickDamage *= 1.5 * float64(req.Quantity)
+		save.ClickLevel++
+		shop.Price *= 1.15 * float64(req.Quantity)
+		shop.Level++
+
+	} else {
+		for _, ally := range save.ClickerPassiveAllies {
+			if ally.Name == shop.Target {
+				save.Golds -= priceToPay
+				if ally.Level == 0 {
+					ally.Dps += ally.ClickerPassiveAllyModel.BaseDps
+
+				} else {
+					ally.Dps *= 1.5 * float64(req.Quantity)
+				}
+				ally.Dps *= 1.5 * float64(req.Quantity)
+				shop.Price *= 1.15 * float64(req.Quantity)
+				ally.Level++
+				shop.Level++
+
+				err = config.DB.Save(&ally).Error
+				if err != nil {
+					return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to update ally"})
+				}
+
+				break
+			}
+		}
+	}
+
+	err = config.DB.Save(&save).Error
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to update save"})
+	}
+
+	err = config.DB.Save(&shop).Error
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to update shop"})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"save": save,
+		"shop": shop,
+	})
+
+}
+
+func GetClickerAllyModels(c echo.Context) error {
+	var allyModels []models.ClickerPassiveAllyModel
+
+	err := config.DB.Find(&allyModels).Error
+	if err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Can't find allyModelsList"})
+	}
+
+	return c.JSON(http.StatusOK, allyModels)
 
 }

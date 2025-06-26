@@ -32,6 +32,9 @@ func InitDatabase() {
 		&models.ClickerGameStats{},
 		&models.ClickerMonster{},
 		&models.ActualMonster{},
+		&models.ClickerPassiveAlly{},
+		&models.ClickerPassiveAllyModel{},
+		&models.Shop{},
 	)
 	DB = db
 	log.Println("✅ Connected to the database")

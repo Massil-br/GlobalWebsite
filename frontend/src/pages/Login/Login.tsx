@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { GlobalVars } from "../utils/types";
 
 interface LoginProps {
-  onLogin: (username: string) => void;
+  onLogin: (user: User) => void;
 }
 
 const Login: React.FC<LoginProps> = ({  onLogin }) => {
@@ -70,7 +70,7 @@ const Login: React.FC<LoginProps> = ({  onLogin }) => {
       setMessage("welcome " + user.username)
 
       // Appel du callback avec le nom d'utilisateur
-      onLogin(user.username);
+      onLogin(user);
     } catch (err: any) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data.message || "Invalid credentials");

@@ -45,7 +45,7 @@ export interface OkResponse{
 
 
 export interface ClickerGameSave{
-    Id: number;
+    id: number;
     created_at : string;
     updated_at: string;
     user_id: number;
@@ -54,10 +54,22 @@ export interface ClickerGameSave{
     step: number;
     clickLevel: number;
     clickDamage: number;
-    autoHuntGrokLevel: number;
-    autoHuntGrokDps: number;
+    clickerPassiveAllies: ClickerPassiveAlly[];
 
 }
+
+export interface ClickerPassiveAlly{
+    id:number;
+    created_at: string;
+    updated_at: string;
+    modelId:number;
+    clickerGameSaveId:number;
+    name:string;
+    dps:number;
+    level: number;
+    description:string;
+}
+
 
 export interface ClickerGameStats {
     Id: number;
@@ -66,8 +78,10 @@ export interface ClickerGameStats {
     user_id : number;
     totalGoldsEarned: number;
     totalClicks: number;
-    totalPlayedTime: string;
+    totalPlayedTime: number;
 }
+
+
 
 export interface Monster{
     userId: number;
@@ -98,6 +112,44 @@ export interface MonsterModel{
     maxHp: number;
     level: number
 }
+
+export interface CreateClickerAllyModelReq {
+    name: string;
+    baseDps: number;
+    basePrice:number;
+    description: string;
+}
+
+export interface ClickerPassiveAllyModel{
+    id:number;
+    created_at: string;
+    updated_at: string;
+    name:string;
+    baseDps:number;
+    basePrice:number;
+    description:number;
+}
+
+export interface Shop{
+    id:number;
+    created_at:string;
+    updated_at:string;
+    clickerGameSaveId:number;
+    name:string;
+    description:string;
+    price:number;
+    level:number;
+    target:string;
+}
+
+
+export interface UpgradeReq{
+    quantity: number;
+    targetShopId:number;
+}
+
+
+
 
 
 export interface EnemyImg {
