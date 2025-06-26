@@ -16,6 +16,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+
+var priceMulti = 1.5
+var damageMulti = 1.15
+
 func GetClickerPlayerSave(c echo.Context) error {
 	val := c.Get("clickerGameSave")
 	if val == nil {
@@ -418,9 +422,9 @@ func Upgrade(c echo.Context) error {
 
 	if shop.Target == "clicker" {
 		save.Golds -= priceToPay
-		save.ClickDamage *= 1.5 * float64(req.Quantity)
+		save.ClickDamage *= damageMulti * float64(req.Quantity)
 		save.ClickLevel++
-		shop.Price *= 1.15 * float64(req.Quantity)
+		shop.Price *= priceMulti * float64(req.Quantity)
 		shop.Level++
 
 	} else {
@@ -431,10 +435,10 @@ func Upgrade(c echo.Context) error {
 					ally.Dps += ally.ClickerPassiveAllyModel.BaseDps
 
 				} else {
-					ally.Dps *= 1.5 * float64(req.Quantity)
+					ally.Dps *= damageMulti* float64(req.Quantity)
 				}
-				ally.Dps *= 1.5 * float64(req.Quantity)
-				shop.Price *= 1.15 * float64(req.Quantity)
+				ally.Dps *= damageMulti * float64(req.Quantity)
+				shop.Price *= priceMulti * float64(req.Quantity)
 				ally.Level++
 				shop.Level++
 
